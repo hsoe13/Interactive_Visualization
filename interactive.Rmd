@@ -1,0 +1,162 @@
+---
+title: "interactive"
+output:
+  html_document: default
+  word_document: default
+date: "2023-04-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+# ```{r}
+# library(ggplot2)
+# library(plotly)
+# library(reshape2)
+# library(dplyr)
+# library(lubridate)
+# data <- read.csv("my_data.csv")
+# data$count <- 1
+# g <- ggplot(data, aes(x=log(mass), y=count, frame=year)) + geom_point(aes(size=sqrt(mass/pi)), pch=25) + scale_size_continuous(range=c(1,10)) + aes(fill=fall, color=country)
+# ggplotly(g + aes(label=country))
+# ```
+
+
+
+```{r}
+library(gapminder)
+library(ggplot2)
+library(plotly)
+library(reshape2)
+library(dplyr)
+library(lubridate)
+data <- read.csv("my_data.csv")
+data$count <- 1
+data <- gapminder
+p <- ggplot(gapminder, aes(x=log(gdpPercap), y=lifeExp, frame=year)) + geom_point(aes(size=sqrt(pop/pi)), pch=25) + scale_size_continuous(range=c(1,10)) + aes(fill=continent)
+ggplotly(p + aes(label=country))
+```
+
+
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(reshape2)
+library(dplyr)
+library(lubridate)
+library(leaflet)
+data <- read.csv("my_data.csv")
+
+leaflet(data) %>% addTiles() %>% addCircleMarkers(lat=~reclat, lng=~reclong, fillOpacity=0.6, radius=~log(log(mass)), stroke=FALSE, color="darkblue", popup=~paste(country, fall, "<br>Total mass(g)", mass))
+```
+
+
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(reshape2)
+library(dplyr)
+library(lubridate)
+library(leaflet)
+library(scales)
+data <- read.csv("my_data.csv")
+
+scaling <- rescale(data$mass, to=c(1,20))
+leaflet(data) %>% addTiles() %>% addCircleMarkers(lat=~reclat, lng=~reclong, fillOpacity=0.7, radius=~scaling, stroke=FALSE, color="darkblue", popup=~paste(country, fall, year, classification, "<br>Total mass(g)", mass))
+```
+
+
+```{r}
+# library(ggplot2)
+# library(plotly)
+# library(reshape2)
+# library(dplyr)
+# library(lubridate)
+# library(leaflet)
+# library(scales)
+# data <- read.csv("my_data.csv")
+# data$colors <- ifelse(data$fall=="found","red","blue")
+# 
+# scaling <- rescale(data$mass, to=c(1,20))
+# leaflet(data) %>% addTiles() %>% addCircleMarkers(lat=~reclat, lng=~reclong, fillOpacity=0.7, radius=~scaling, stroke=FALSE, color="darkblue", popup=~paste(country, fall, year, classification, "<br>Total mass(g)", mass)) %>% addLegend(position="bottomright", title="Found and Not Found", colors=data$colors, labels=data$fall)
+```
+
+
+
+
+
+```{r}
+library(plotly)
+library(rjson)
+
+url <- 'https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json'
+counties <- rjson::fromJSON(file=url)
+url2<- "https://raw.githubusercontent.com/plotly/datasets/master/fips-unemp-16.csv"
+df <- read.csv(url2, colClasses=c(fips="character"))
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+fig <- plot_ly()
+fig <- fig %>% add_trace(
+    type="choropleth",
+    geojson=counties,
+    locations=df$fips,
+    z=df$unemp,
+    colorscale="Viridis",
+    zmin=0,
+    zmax=12,
+    marker=list(line=list(
+      width=0)
+    )
+  )
+
+fig <- fig %>% colorbar(title = "Unemployment Rate (%)")
+fig <- fig %>% layout(
+    title = "2016 US Unemployment by County"
+)
+
+fig <- fig %>% layout(
+    geo = g
+  )
+
+```
+
+
+
+```{r}
+library(plotly)
+library(countrycode)
+data <- read.csv("my_data.csv")
+data$countrycode <- countrycode(sourcevar=data$country, origin="country.name", destination="iso3c")
+
+plot_ly(data, type="choropleth", locations=data$countrycode, z=data$mass, text=data$country, colorscale="Blues")
+```
+
+
+
+```{r}
+library(plotly)
+library(gganimate)
+library(dplyr)
+data <- read.csv("my_data.csv")
+data <- data[data$year>1969 & data$year<2001,]
+data <- data %>% group_by(year, fall) %>% summarise(mass=sum(mass))
+data$year <- as.numeric(as.character(data$year))
+now <- ggplot(data, aes(x=year, y=sqrt(mass), group=fall, color=fall)) + geom_point() + transition_reveal(year)
+animate(now, height=500, width=500)
+```
+
+
+
+<!-- ```{r} -->
+<!-- pdat <- read.csv("./tempdat.csv") -->
+<!-- ggplot(pdat, aes(x=long, y=lat,group=group)) +  -->
+<!--   geom_polygon(aes(fill=temp), colour = alpha("white", 1/2), size = 0.2) + theme_bw() +  -->
+<!--   scale_fill_continuous(low="blue", high="hotpink")  -->
+<!-- ``` -->
